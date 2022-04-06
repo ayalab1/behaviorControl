@@ -1,0 +1,34 @@
+% helper_Ymaze_video_left
+
+% Shift/Cycle the LUT entries:
+
+% helper_Ymaze_prepare_left
+screenid = 2;
+Screen('Preference', 'Verbosity', 0)
+Screen('Preference', 'VisualDebugLevel', 0); % don't show start screen\
+Screen('Preference', 'SkipSyncTests', 1); % skip some tests that may trigger code errors
+win = Screen('OpenWindow', screenid, 0); % Open a fullscreen onscreen window on that display
+[width, height] = Screen('WindowSize', win);
+
+origLUT = Screen('ReadNormalizedGammaTable', screenid);
+if size(origLUT, 1) ~= 256
+    origLUT = origLUT(1:256, :);
+end
+
+newLUT = origLUT; newLUT(1,:)=0.5;
+left_s = floor(min(width, height)/2)*10;
+left_x = meshgrid(-left_s:left_s, -left_s:left_s);
+left_fintex = ones(2*left_s+1,2*left_s+1);
+left_fintex(:,:) = mod(left_x,255)+1;
+left_texture = Screen('MakeTexture', win, left_fintex);
+Screen('DrawTexture', win, left_texture(1));
+Screen('Flip', win);
+
+while true
+speed = -3; % netative for going left
+newLUT(2:end,:) = circshift(newLUT(2:end,:),speed);
+% Update the hardware CLUT with our newLUT:
+Screen('LoadNormalizedGammaTable', win, newLUT, 2);
+% This 'Flip' waits for vertical retrace...
+Screen('Flip', win, 0, 1);
+end
