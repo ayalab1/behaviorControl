@@ -69,20 +69,20 @@ void loop()
    
 
     // Wrong arm notes: previous state = current state
-    if (portIRsensorReading_1 < 75) && (previous_state != 0)
+    if (armIRsensorReading_1 < 100) && (previous_state != 0) // for back arm, 1000 is base, 30 is detecting
     {
         EnableWater_1 = true;
         EnableWater_2 = false;
         previous_state = 0;
     }
-    if (portIRsensorReading_2 < 75) && (previous_state != 1)
+    if (armIRsensorReading_2 > 100) && (previous_state != 1) // for front arm, 1000 is base, 30 is detecting
     {
         EnableWater_1 = false;
         EnableWater_2 = true;
         previous_state = 1;
     }
         // Correct trial FRONT
-        if (EnableWater_1)
+        if (EnableWater_1)&&(portIRsensorReading_1 < 100) // should give water and animal is at lick port (30 is detecting)
         {
             Water_1 = millis();
             EnableWater_1 = false;
@@ -98,7 +98,7 @@ void loop()
           water_open_1 = false;
         }
         // Correct trial BACK
-        if (EnableWater_2)
+        if (EnableWater_2)&&(portIRsensorReading_2 < 100) // 30 is detecting
         {
             Water_2 = millis();
             EnableWater_2 = false;

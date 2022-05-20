@@ -37,8 +37,6 @@ void setup() {
   // put your setup code here, to run once:
     pinMode(pump_1, OUTPUT);
     pinMode(pump_2, OUTPUT);
-    pinMode(portLED_1, OUTPUT);
-    pinMode(portLED_2, OUTPUT);
     pinMode(portIRsensor_1, INPUT);
     pinMode(portIRsensor_2, INPUT);
     pinMode(armIRsensor_1, INPUT);
@@ -47,8 +45,6 @@ void setup() {
     pinMode(TTLarm_1, OUTPUT);
     pinMode(TTLarm_2, OUTPUT);
     current_state = 1;
-    digitalWrite(portLED_1, HIGH);
-    digitalWrite(portLED_2, HIGH);
     Serial.begin(9600);
 }
 
