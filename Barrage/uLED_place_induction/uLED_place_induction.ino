@@ -8,24 +8,24 @@ boolean continousStimulation = true;// stimulation no dependent of the behavoiur
 
 // Pins
 const int s1l1Pin = 34;
-const int s1l2Pin = 32;
+const int s1l2Pin = 22;
 const int s1l3Pin = 36;
 
-const int s2l1Pin = 30;
+const int s2l1Pin = 24;
 const int s2l2Pin = 38;
-const int s2l3Pin = 28;
+const int s2l3Pin = 26;
 
 const int s3l1Pin = 40;
-const int s3l2Pin = 26;
+const int s3l2Pin = 28;
 const int s3l3Pin = 42;
 
-const int s4l1Pin = 24;
+const int s4l1Pin = 30;
 const int s4l2Pin = 44;
-const int s4l3Pin = 22;
+const int s4l3Pin = 32; 
 
 const int BlockPin = 53; // From the control behaviour arduino
 
-const int useOrder[] = {3, 1, 2};
+const int useOrder[] = {2, 3, 1};
 const int stimShank = 4;
 
 // state variables

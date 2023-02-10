@@ -12,20 +12,20 @@ boolean stimulateShank4 = true;
 
 // Pins
 const int s1l1Pin = 34;
-const int s1l2Pin = 32;
+const int s1l2Pin = 22;
 const int s1l3Pin = 36;
 
-const int s2l1Pin = 30;
+const int s2l1Pin = 24;
 const int s2l2Pin = 38;
-const int s2l3Pin = 28;
+const int s2l3Pin = 26;
 
 const int s3l1Pin = 40;
-const int s3l2Pin = 26;
+const int s3l2Pin = 28;
 const int s3l3Pin = 42;
 
-const int s4l1Pin = 24;
+const int s4l1Pin = 30;
 const int s4l2Pin = 44;
-const int s4l3Pin = 22;
+const int s4l3Pin = 32; 
 
 const int BlockPin = 53; // From the control behaviour arduino
 
@@ -59,7 +59,7 @@ void setup() {
 void loop() {
   if  (continousStimulation == true) {
     digitalWrite(LED_BUILTIN, HIGH);   // turn the LED on   
-    uled_channel = random(1,12); // random number from 1 to 12
+    uled_channel = random(1,13); // random number from 1 to 12
     if (uled_channel == 1 & stimulateShank1 == true){
       digitalWrite(s1l1Pin, HIGH); delay(pulseDuration); digitalWrite(s1l1Pin, LOW);
       } else if (uled_channel == 2 & stimulateShank1 == true){
