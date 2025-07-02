@@ -40,7 +40,7 @@ int read_left = 0;
 int IR_thresh = 500; //this should work for all. >500 is empty, <500 detects mouse
 
 // Set up behavior
-int lap_ct = 0;
+int arm_ct = 0;
 int prev_loc = 0; //0 = water port, 1 = right IR, 2 = middle IR, 3 = left IR
 int water_delay = 5000;
 
@@ -108,19 +108,20 @@ void loop() {
       servo1_middle.write(open_middle);
       servo1_left.write(open_left);
       prev_loc = 1;
+      arm_ct = arm_ct + 1;
     }
     if ((read_left < IR_thresh) && (prev_loc == 1)) //passes left IR coming from right arm
     {
       Serial.print("Left arm");
       servo1_middle.write(block_left); //block from going back
       prev_loc = 3;
+      arm_ct = arm_ct + 1;
     }
     if ((read_water < IR_thresh) && (prev_loc == 3))
     {
       Serial.print("Water port");
       prev_loc = 0;
-      lap_ct = lap_ct + 1;
-      if (lap_ct == num_laps)
+      if ((arm_ct / 2) == num_laps)
       {
         Serial.print("Dispensing");
         servo1_left.write(closed_left);
@@ -135,7 +136,7 @@ void loop() {
         }
         delay(water_delay);
         servo1_right.write(open_right);
-        lap_ct = 0;
+        arm_ct = 0;
       }
       else
       {
@@ -152,19 +153,20 @@ void loop() {
       servo1_middle.write(open_middle);
       servo1_right.write(open_right);
       prev_loc = 3;
+      arm_ct = arm_ct + 1;
     }
     if ((read_right < IR_thresh) && (prev_loc == 3)) //passes right IR coming from left arm
     {
       Serial.print("Right arm");
       servo1_middle.write(block_right); //block from going back
       prev_loc = 1;
+      arm_ct = arm_ct + 1;
     }
     if ((read_water < IR_thresh) & (prev_loc == 1))
     {
       Serial.print("Water port");
       prev_loc = 0;
-      lap_ct = lap_ct + 1;
-      if (lap_ct == num_laps)
+      if ((arm_ct / 2) == num_laps)
       {
         Serial.print("Dispensing");
         servo1_right.write(closed_right);
@@ -179,7 +181,7 @@ void loop() {
         }
         delay(water_delay);
         servo1_left.write(open_left);
-        lap_ct = 0;
+        arm_ct = 0;
       }
       else
       {
@@ -195,17 +197,18 @@ void loop() {
       servo1_middle.write(block_right);
       servo1_left.write(open_left);
       prev_loc = 2;
+      arm_ct = arm_ct + 1;
     }
     if ((read_left < IR_thresh) && (prev_loc == 2)) //passes left IR coming from middle
     {
       servo1_middle.write(block_left); //block from going back
       prev_loc = 3;
+      arm_ct = arm_ct + 1;
     }
     if ((read_water < IR_thresh) & (prev_loc == 3))
     {
-      lap_ct = lap_ct + 1;
       prev_loc == 0;
-      if (lap_ct == num_laps)
+      if ((arm_ct / 2) == num_laps)
       {
         servo1_left.write(closed_left);
         pump_ct = millis();
@@ -218,7 +221,7 @@ void loop() {
           digitalWrite(pump_1, LOW);
         }
         //no water delay here
-        lap_ct = 0;
+        arm_ct = 0;
       } // no else here because there isn't a door to block them from continuing
     }
   }
@@ -230,17 +233,18 @@ void loop() {
       servo1_middle.write(block_left);
       servo1_right.write(open_right);
       prev_loc = 2;
+      arm_ct = arm_ct+1;
     }
     if ((read_right < IR_thresh) && (prev_loc == 2)) //passes right IR coming from left arm
     {
       servo1_middle.write(block_right); //block from going back
       prev_loc = 1;
+      arm_ct = arm_ct+1;
     }
     if ((read_water < IR_thresh) & (prev_loc == 1))
     {
-      lap_ct = lap_ct + 1;
       prev_loc == 0;
-      if (lap_ct == num_laps)
+      if ((arm_ct / 2) == num_laps)
       {
         servo1_right.write(closed_right);
         pump_ct = millis();
@@ -253,7 +257,7 @@ void loop() {
           digitalWrite(pump_1, LOW);
         }
         //no water delay here
-        lap_ct = 0;
+        arm_ct = 0;
       }
     }
   }
