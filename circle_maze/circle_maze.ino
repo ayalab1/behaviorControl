@@ -16,12 +16,12 @@ Servo servo1_right;
 #define servo_left 32
 
 int open_right = 90;
-int closed_right = 0;
+int closed_right = 40;
 int open_middle = 150;
-int block_right = 115; //middle door
-int block_left = 65; //middle door
-int open_left = 50;
-int closed_left = 15;
+int block_right = 110; //middle door
+int block_left = 60; //middle door
+int open_left = 55;
+int closed_left = 0;
 
 // Set up water pump
 #define pump_1 36
@@ -29,13 +29,13 @@ unsigned long PUMP_OPEN_TIME = 100;
 unsigned long pump_ct;
 
 // Set up IR sensors
-int IR_water = A0;
+int IR_water = A10;
 int read_water = 0;
-int IR_right = A1;
+int IR_right = A11;
 int read_right = 0;
-int IR_middle = A2;
+int IR_middle = A12;
 int read_middle = 0;
-int IR_left = A3;
+int IR_left = A13;
 int read_left = 0;
 int IR_thresh = 500; //this should work for all. >500 is empty, <500 detects mouse
 
@@ -103,7 +103,7 @@ void loop() {
   {
     if ((read_right < IR_thresh) && ((prev_loc == 0)||(prev_loc == 3))) //passes right IR coming from water port OR left if the mouse doesn't stop at water port
     {
-      Serial.print("Right arm");
+      //Serial.print("Right arm");
       servo1_right.write(closed_right);
       servo1_middle.write(open_middle);
       servo1_left.write(open_left);
@@ -112,18 +112,18 @@ void loop() {
     }
     if ((read_left < IR_thresh) && (prev_loc == 1)) //passes left IR coming from right arm
     {
-      Serial.print("Left arm");
+      //Serial.print("Left arm");
       servo1_middle.write(block_left); //block from going back
       prev_loc = 3;
       arm_ct = arm_ct + 1;
     }
     if ((read_water < IR_thresh) && (prev_loc == 3))
     {
-      Serial.print("Water port");
+      //Serial.print("Water port");
       prev_loc = 0;
       if ((arm_ct / 2) == num_laps)
       {
-        Serial.print("Dispensing");
+        //Serial.print("Dispensing");
         servo1_left.write(closed_left);
         pump_ct = millis();
         while ((millis() - pump_ct) < PUMP_OPEN_TIME)
@@ -148,7 +148,7 @@ void loop() {
   {
     if ((read_left < IR_thresh) && ((prev_loc == 0)||(prev_loc == 1))) //passes left IR coming from water port
     {
-      Serial.print("Left arm");
+      //Serial.print("Left arm");
       servo1_left.write(closed_left);
       servo1_middle.write(open_middle);
       servo1_right.write(open_right);
@@ -157,18 +157,18 @@ void loop() {
     }
     if ((read_right < IR_thresh) && (prev_loc == 3)) //passes right IR coming from left arm
     {
-      Serial.print("Right arm");
+      //Serial.print("Right arm");
       servo1_middle.write(block_right); //block from going back
       prev_loc = 1;
       arm_ct = arm_ct + 1;
     }
     if ((read_water < IR_thresh) & (prev_loc == 1))
     {
-      Serial.print("Water port");
+      //Serial.print("Water port");
       prev_loc = 0;
       if ((arm_ct / 2) == num_laps)
       {
-        Serial.print("Dispensing");
+        //Serial.print("Dispensing");
         servo1_right.write(closed_right);
         pump_ct = millis();
         while ((millis() - pump_ct) < PUMP_OPEN_TIME)
@@ -262,7 +262,7 @@ void loop() {
     }
   }
   //sensorRead = analogRead(IRsensor);
-  // Serial.println(sensorRead);
+  // //Serial.println(sensorRead);
   // put your main code here, to run repeatedly:
   //servo1_middle.write(open_middle);
   //delay(5000);
