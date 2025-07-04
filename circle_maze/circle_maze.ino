@@ -1,5 +1,5 @@
 // Trial conditions
-int num_laps = 2;
+int num_laps = 1;
 boolean CCW = true;
 boolean full_circle = true; //if using half circle, should always start down middle
 
@@ -16,11 +16,11 @@ Servo servo1_right;
 #define servo_left 32
 
 int open_right = 90;
-int closed_right = 40;
-int open_middle = 150;
-int block_right = 110; //middle door
-int block_left = 60; //middle door
-int open_left = 55;
+int closed_right = 0;
+int open_middle = 0;
+int block_right = 120; //middle door
+int block_left = 70; //middle door
+int open_left = 90;
 int closed_left = 0;
 
 // Set up water pump
@@ -116,12 +116,16 @@ void loop() {
       servo1_middle.write(block_left); //block from going back
       prev_loc = 3;
       arm_ct = arm_ct + 1;
+      if (round(arm_ct / 2) < num_laps)
+      {
+        servo1_right.write(open_right);
+      }
     }
     if ((read_water < IR_thresh) && (prev_loc == 3))
     {
       //Serial.print("Water port");
       prev_loc = 0;
-      if ((arm_ct / 2) == num_laps)
+      if (round(arm_ct / 2) == num_laps)
       {
         //Serial.print("Dispensing");
         servo1_left.write(closed_left);
@@ -161,12 +165,16 @@ void loop() {
       servo1_middle.write(block_right); //block from going back
       prev_loc = 1;
       arm_ct = arm_ct + 1;
+      if (round(arm_ct / 2) < num_laps)
+      {
+        servo1_left.write(open_left);
+      }
     }
     if ((read_water < IR_thresh) & (prev_loc == 1))
     {
       //Serial.print("Water port");
       prev_loc = 0;
-      if ((arm_ct / 2) == num_laps)
+      if (round(arm_ct / 2) == num_laps)
       {
         //Serial.print("Dispensing");
         servo1_right.write(closed_right);
@@ -208,7 +216,7 @@ void loop() {
     if ((read_water < IR_thresh) & (prev_loc == 3))
     {
       prev_loc == 0;
-      if ((arm_ct / 2) == num_laps)
+      if (round(arm_ct / 2) == num_laps)
       {
         servo1_left.write(closed_left);
         pump_ct = millis();
@@ -244,7 +252,7 @@ void loop() {
     if ((read_water < IR_thresh) & (prev_loc == 1))
     {
       prev_loc == 0;
-      if ((arm_ct / 2) == num_laps)
+      if (round(arm_ct / 2) == num_laps)
       {
         servo1_right.write(closed_right);
         pump_ct = millis();
