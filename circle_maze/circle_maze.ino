@@ -1,5 +1,5 @@
 // Trial conditions
-int num_laps = 1;
+int num_laps = 2;
 boolean CCW = true;
 boolean full_circle = true; //if using half circle, should always start down middle
 
@@ -46,6 +46,7 @@ int atRight = 1;
 int atMiddle = 2;
 int atLeft = 3; 
 int prev_loc = 0; 
+int next_loc = 0;
 
 int water_delay = 5000;
 
@@ -66,21 +67,25 @@ void setup() {
   if ((full_circle) && (CCW))
   {
     setMotors(open_right, open_middle, closed_left);
+    next_loc = atRight;
   }
   // full circle, CW
   else if ((full_circle) && (!CCW))
   {
     setMotors(closed_right, open_middle, open_left);
+    next_loc = atLeft;
   }
   // half circle, CCW
   else if ((!full_circle) && (CCW))
   {
     setMotors(closed_right, block_right, closed_left);//right permanently closed for this trial type
+    next_loc = atMiddle;
   }
   // half circle, CW
   else if ((!full_circle) && (!CCW))
   {
     setMotors(closed_right, block_left, closed_left);//left permanently closed for this trial type
+    next_loc = atMiddle;
   }
 
   pinMode(pump_1, OUTPUT);
@@ -103,34 +108,45 @@ void loop() {
 
   if ((full_circle) && (CCW))
   {
-    if ((read_right < IR_thresh) && ((prev_loc == atWater)||(prev_loc == atLeft))) //passes right IR coming from water port OR left if the mouse doesn't stop at water port
+    if (((read_right < IR_thresh) && ((prev_loc == atWater)||(prev_loc == atLeft))) && (next_loc == atRight)) //passes right IR coming from water port OR left if the mouse doesn't stop at water port
     {
-      //Serial.print("Right arm");
+      Serial.print('\n');
+      Serial.print("Right arm");
       arm_ct = arm_ct + 1;
       setMotors(closed_right, open_middle, open_left);
       prev_loc = atRight; 
+      next_loc = atLeft;
     }
-    if ((read_left < IR_thresh) && (prev_loc == atRight)) //passes left IR coming from right arm
+    if (((read_left < IR_thresh) && (prev_loc == atRight) && (next_loc == atLeft))) //passes left IR coming from right arm
     {
       //Serial.print("Left arm");
       arm_ct = arm_ct + 1;
       prev_loc = atLeft;
       if (round(arm_ct / 2) < num_laps)
       {
+        Serial.print('\n');
+        Serial.print("Left arm no water");
         setMotors(open_right, block_left, open_left);
+        next_loc = atRight;
       }
       else
       {
+        Serial.print('\n');
+        Serial.print("Left arm ready for water");
         setMotors(closed_right, block_left, open_left);
+        next_loc = atWater;
       }
     }
-    if ((read_water < IR_thresh) && (prev_loc == atLeft))
+    if ((read_water < IR_thresh) && (prev_loc == atLeft) && (next_loc == atWater))
     {
       //Serial.print("Water port");
       prev_loc = atWater;
+      next_loc = atRight;
       if (round(arm_ct / 2) == num_laps)
       {
         //Serial.print("Dispensing");
+        Serial.print('\n');
+        Serial.print("Water, dispensing");
         setMotors(closed_right, open_middle, closed_left);
         pump_ct = millis();
         while ((millis() - pump_ct) < PUMP_OPEN_TIME)
@@ -143,17 +159,21 @@ void loop() {
         }
         delay(water_delay);
         setMotors(open_right, open_middle, closed_left);
+        Serial.print('\n');
+        Serial.print("Released from water");
         arm_ct = 0;
       }
       else
       {
         setMotors(open_right, open_middle, closed_left);
+        Serial.print('\n');
+        Serial.print("Water, not dispensing");
       }
     }
   }
   else if ((full_circle) && (!CCW))
   {
-    if ((read_left < IR_thresh) && ((prev_loc == atWater)||(prev_loc == atRight))) //passes left IR coming from water port
+    if (((read_left < IR_thresh) && ((prev_loc == atWater)||(prev_loc == atRight)) && (next_loc == atLeft))) //passes left IR coming from water port
     {
       //Serial.print("Left arm");
       arm_ct = arm_ct + 1;
