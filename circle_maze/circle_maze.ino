@@ -15,12 +15,12 @@ Servo servo1_right;
 #define servo_middle 31
 #define servo_left 32
 
-int open_right = 90;
-int closed_right = 0;
-int open_middle = 0;
-int block_right = 120; //middle door
-int block_left = 70; //middle door
-int open_left = 90;
+int open_right = 95;
+int closed_right = 40;
+int open_middle = 155;
+int block_right = 105; //middle door
+int block_left = 60; //middle door
+int open_left = 60;
 int closed_left = 0;
 
 // Set up water pump
@@ -179,8 +179,9 @@ void loop() {
       arm_ct = arm_ct + 1;
       setMotors(open_right, open_middle, closed_left);
       prev_loc = atLeft;
+      next_loc = atRight;
     }
-    if ((read_right < IR_thresh) && (prev_loc == atLeft)) //passes right IR coming from left arm
+    if ((read_right < IR_thresh) && (prev_loc == atLeft) && (next_loc == atRight)) //passes right IR coming from left arm
     {
       //Serial.print("Right arm");
       arm_ct = arm_ct + 1;
@@ -188,16 +189,19 @@ void loop() {
       if (round(arm_ct / 2) < num_laps)
       {
         setMotors(open_right, block_right, open_left);
+        next_loc = atLeft;
       }
       else
       {
         setMotors(open_right, block_right, closed_left);
+        next_loc = atWater;
       }
     }
-    if ((read_water < IR_thresh) & (prev_loc == atRight))
+    if ((read_water < IR_thresh) && (prev_loc == atRight) && (next_loc == atWater))
     {
       //Serial.print("Water port");
       prev_loc = atWater;
+      next_loc = atLeft;
       if (round(arm_ct / 2) == num_laps)
       {
         //Serial.print("Dispensing");
@@ -223,21 +227,31 @@ void loop() {
   }
   else if ((!full_circle) && (CCW)) //always start down middle trajectory, right always blocked
   {
-    if ((read_middle < IR_thresh) && ((prev_loc == atWater)||(prev_loc == atLeft))) //passes middle IR coming from water port
+    if ((read_middle < IR_thresh) && ((prev_loc == atWater)||(prev_loc == atLeft)) && (next_loc = atMiddle)) //passes middle IR coming from water port
     {
       arm_ct = arm_ct + 1;
       setMotors(closed_right, block_right, open_left);
       prev_loc = atMiddle;
+      next_loc = atLeft;
     }
-    if ((read_left < IR_thresh) && (prev_loc == atMiddle)) //passes left IR coming from middle
+    if ((read_left < IR_thresh) && (prev_loc == atMiddle) && (next_loc = atLeft)) //passes left IR coming from middle
     {
       setMotors(closed_right, block_left, open_left); //block from going back
       prev_loc = atLeft;
       arm_ct = arm_ct + 1;
+      if (round(arm_ct / 2) == num_laps)
+      {
+        next_loc = atWater;
+      }
+      else if (round(arm_ct / 2) < num_laps)
+      {
+        next_loc = atMiddle;
+      }
     }
-    if ((read_water < IR_thresh) & (prev_loc == atLeft))
+    if ((read_water < IR_thresh) && (prev_loc == atLeft) && (next_loc == atWater))
     {
       prev_loc == atWater;
+      next_loc = atMiddle;
       if (round(arm_ct / 2) == num_laps)
       {
         setMotors(closed_right, block_right, closed_left);
@@ -257,21 +271,31 @@ void loop() {
   }
   else if ((!full_circle) && (!CCW))
   {
-    if ((read_middle < IR_thresh) && ((prev_loc == atWater)||(prev_loc == atRight))) //passes middle IR coming from water port
+    if ((read_middle < IR_thresh) && ((prev_loc == atWater)||(prev_loc == atRight)) && (next_loc == atMiddle)) //passes middle IR coming from water port
     {
       setMotors(open_right, block_left, closed_left);
       prev_loc = atMiddle;
+      next_loc = atRight;
       arm_ct = arm_ct+1;
     }
-    if ((read_right < IR_thresh) && (prev_loc == atMiddle)) //passes right IR coming from left arm
+    if ((read_right < IR_thresh) && (prev_loc == atMiddle) && (next_loc == atRight)) //passes right IR coming from left arm
     {
       setMotors(open_right, block_right, closed_left);
       prev_loc = atRight;
       arm_ct = arm_ct+1;
+      if (round(arm_ct / 2) == num_laps)
+      {
+        next_loc = atWater;
+      }
+      else if (round(arm_ct / 2) < num_laps)
+      {
+        next_loc = atMiddle;
+      }
     }
-    if ((read_water < IR_thresh) & (prev_loc == atRight))
+    if ((read_water < IR_thresh) & (prev_loc == atRight) && (next_loc == atWater))
     {
       prev_loc == atWater;
+      next_loc == atMiddle;
       if (round(arm_ct / 2) == num_laps)
       {
         setMotors(closed_right, block_left, closed_left);
