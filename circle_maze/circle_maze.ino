@@ -1,7 +1,15 @@
 // Trial conditions
 int num_laps = 1;
 boolean CCW = true;
-boolean full_circle = false; //if using half circle, should always start down middle
+boolean full_circle = true; //if using half circle, should always start down middle
+
+// Set up command window
+char incomingByte;
+boolean started_trial = false;
+// g = GO - release mouse from start area
+// l = LEFT - trigger left sensor manually
+// m = MIDDLE - trigger middle sensor manually
+// r = RIGHT - trigger right sensor manually
 
 // Set up servos
 #include <Servo.h>
@@ -25,7 +33,7 @@ int closed_left = 0;
 
 // Set up water pump
 #define pump_1 36
-unsigned long PUMP_OPEN_TIME = 1*1000; //100ms
+unsigned long PUMP_OPEN_TIME = 1 * 1000; //100ms
 unsigned long pump_ct;
 
 // Set up IR sensors
@@ -44,13 +52,13 @@ int arm_ct = 0;
 int atWater = 0;
 int atRight = 1;
 int atMiddle = 2;
-int atLeft = 3; 
-int prev_loc = 0; 
+int atLeft = 3;
+int prev_loc = 0;
 int next_loc = 0;
 
-int water_delay = 5*1000; //5 seconds
+int water_delay = 5 * 1000; //5 seconds
 
-void setMotors(int setRight, int setMiddle, int setLeft){
+void setMotors(int setRight, int setMiddle, int setLeft) {
   servo1_right.write(setRight);
   servo1_middle.write(setMiddle);
   servo1_left.write(setLeft);
@@ -63,30 +71,7 @@ void setup() {
   servo1_left.attach(servo_left);
 
   //mouse is starting in home port. Depending on trial setup, need to start in a different configuration
-  // full circle, CCW
-  if ((full_circle) && (CCW))
-  {
-    setMotors(open_right, open_middle, closed_left);
-    next_loc = atRight;
-  }
-  // full circle, CW
-  else if ((full_circle) && (!CCW))
-  {
-    setMotors(closed_right, open_middle, open_left);
-    next_loc = atLeft;
-  }
-  // half circle, CCW
-  else if ((!full_circle) && (CCW))
-  {
-    setMotors(closed_right, block_right, closed_left);//right permanently closed for this trial type
-    next_loc = atMiddle;
-  }
-  // half circle, CW
-  else if ((!full_circle) && (!CCW))
-  {
-    setMotors(closed_right, block_left, closed_left);//left permanently closed for this trial type
-    next_loc = atMiddle;
-  }
+  setMotors(closed_right, block_right, closed_left);
 
   pinMode(pump_1, OUTPUT);
   digitalWrite(pump_1, LOW);
@@ -100,230 +85,276 @@ void setup() {
 }
 
 void loop() {
-  // get initial IR sensor values
-  read_water = analogRead(IR_water);
-  read_right = analogRead(IR_right);
-  read_middle = analogRead(IR_middle);
-  read_left = analogRead(IR_left);
-
-  if ((full_circle) && (CCW))
+  incomingByte = Serial.read();
+  if ((!started_trial) && (incomingByte == 'g'))
   {
-    if (((read_right < IR_thresh) && ((prev_loc == atWater)||(prev_loc == atLeft))) && (next_loc == atRight)) //passes right IR coming from water port OR left if the mouse doesn't stop at water port
+    // full circle, CCW
+    if ((full_circle) && (CCW))
     {
-      //Serial.print('\n');
-      //Serial.print("Right arm");
-      arm_ct = arm_ct + 1;
+      setMotors(open_right, open_middle, closed_left);
+      next_loc = atRight;
+    }
+    // full circle, CW
+    else if ((full_circle) && (!CCW))
+    {
       setMotors(closed_right, open_middle, open_left);
-      prev_loc = atRight; 
       next_loc = atLeft;
     }
-    if (((read_left < IR_thresh) && (prev_loc == atRight) && (next_loc == atLeft))) //passes left IR coming from right arm
+    // half circle, CCW
+    else if ((!full_circle) && (CCW))
     {
-      ////Serial.print("Left arm");
-      arm_ct = arm_ct + 1;
-      prev_loc = atLeft;
-      if (round(arm_ct / 2) < num_laps)
-      {
-        //Serial.print('\n');
-        //Serial.print("Left arm no water");
-        setMotors(open_right, block_left, open_left);
-        next_loc = atRight;
-      }
-      else
-      {
-        //Serial.print('\n');
-        //Serial.print("Left arm ready for water");
-        setMotors(closed_right, block_left, open_left);
-        next_loc = atWater;
-      }
+      setMotors(closed_right, block_right, closed_left);//right permanently closed for this trial type
+      next_loc = atMiddle;
     }
-    if ((read_water < IR_thresh) && (prev_loc == atLeft) && (next_loc == atWater))
+    // half circle, CW
+    else if ((!full_circle) && (!CCW))
     {
-      //Serial.print("Water port");
-      prev_loc = atWater;
-      next_loc = atRight;
-      if (round(arm_ct / 2) == num_laps)
-      {
-        //Serial.print("Dispensing");
-        //Serial.print('\n');
-        //Serial.print("Water, dispensing");
-        setMotors(closed_right, open_middle, closed_left);
-        pump_ct = millis();
-        while ((millis() - pump_ct) < PUMP_OPEN_TIME)
-        {
-          digitalWrite(pump_1, HIGH);
-        }
-        if ((millis() - pump_ct) >= PUMP_OPEN_TIME)
-        {
-          digitalWrite(pump_1, LOW);
-        }
-        delay(water_delay);
-        setMotors(open_right, open_middle, closed_left);
-        //Serial.print('\n');
-        //Serial.print("Released from water");
-        arm_ct = 0;
-      }
-      else
-      {
-        setMotors(open_right, open_middle, closed_left);
-        //Serial.print('\n');
-        //Serial.print("Water, not dispensing");
-      }
+      setMotors(closed_right, block_left, closed_left);//left permanently closed for this trial type
+      next_loc = atMiddle;
     }
+    started_trial = false;
   }
-  else if ((full_circle) && (!CCW))
+
+  if (started_trial)
   {
-    if (((read_left < IR_thresh) && ((prev_loc == atWater)||(prev_loc == atRight)) && (next_loc == atLeft))) //passes left IR coming from water port
+    // get initial IR sensor values
+    read_water = analogRead(IR_water);
+    read_right = analogRead(IR_right);
+    read_middle = analogRead(IR_middle);
+    read_left = analogRead(IR_left);
+
+    if (incomingByte == 'l')
     {
-      //Serial.print("Left arm");
-      arm_ct = arm_ct + 1;
-      setMotors(open_right, open_middle, closed_left);
-      prev_loc = atLeft;
-      next_loc = atRight;
+      read_left = 0;
     }
-    if ((read_right < IR_thresh) && (prev_loc == atLeft) && (next_loc == atRight)) //passes right IR coming from left arm
+    else if (incomingByte == 'm')
     {
-      //Serial.print("Right arm");
-      arm_ct = arm_ct + 1;
-      prev_loc = atRight;      
-      if (round(arm_ct / 2) < num_laps)
+      read_middle = 0;
+    }
+    else if (incomingByte == 'r')
+    {
+      read_right = 0;
+    }
+
+    if ((full_circle) && (CCW))
+    {
+      if (((read_right < IR_thresh) && ((prev_loc == atWater) || (prev_loc == atLeft))) && (next_loc == atRight)) //passes right IR coming from water port OR left if the mouse doesn't stop at water port
       {
-        setMotors(open_right, block_right, open_left);
+        //Serial.print('\n');
+        //Serial.print("Right arm");
+        arm_ct = arm_ct + 1;
+        setMotors(closed_right, open_middle, open_left);
+        prev_loc = atRight;
         next_loc = atLeft;
       }
-      else
+      if (((read_left < IR_thresh) && (prev_loc == atRight) && (next_loc == atLeft))) //passes left IR coming from right arm
+      {
+        ////Serial.print("Left arm");
+        arm_ct = arm_ct + 1;
+        prev_loc = atLeft;
+        if (round(arm_ct / 2) < num_laps)
+        {
+          //Serial.print('\n');
+          //Serial.print("Left arm no water");
+          setMotors(open_right, block_left, open_left);
+          next_loc = atRight;
+        }
+        else
+        {
+          //Serial.print('\n');
+          //Serial.print("Left arm ready for water");
+          setMotors(closed_right, block_left, open_left);
+          next_loc = atWater;
+        }
+      }
+      if ((read_water < IR_thresh) && (prev_loc == atLeft) && (next_loc == atWater))
+      {
+        //Serial.print("Water port");
+        prev_loc = atWater;
+        next_loc = atRight;
+        if (round(arm_ct / 2) == num_laps)
+        {
+          //Serial.print("Dispensing");
+          //Serial.print('\n');
+          //Serial.print("Water, dispensing");
+          setMotors(closed_right, open_middle, closed_left);
+          pump_ct = millis();
+          while ((millis() - pump_ct) < PUMP_OPEN_TIME)
+          {
+            digitalWrite(pump_1, HIGH);
+          }
+          if ((millis() - pump_ct) >= PUMP_OPEN_TIME)
+          {
+            digitalWrite(pump_1, LOW);
+          }
+          delay(water_delay);
+          setMotors(open_right, open_middle, closed_left);
+          //Serial.print('\n');
+          //Serial.print("Released from water");
+          arm_ct = 0;
+        }
+        else
+        {
+          setMotors(open_right, open_middle, closed_left);
+          //Serial.print('\n');
+          //Serial.print("Water, not dispensing");
+        }
+      }
+    }
+    else if ((full_circle) && (!CCW))
+    {
+      if (((read_left < IR_thresh) && ((prev_loc == atWater) || (prev_loc == atRight)) && (next_loc == atLeft))) //passes left IR coming from water port
+      {
+        //Serial.print("Left arm");
+        arm_ct = arm_ct + 1;
+        setMotors(open_right, open_middle, closed_left);
+        prev_loc = atLeft;
+        next_loc = atRight;
+      }
+      if ((read_right < IR_thresh) && (prev_loc == atLeft) && (next_loc == atRight)) //passes right IR coming from left arm
+      {
+        //Serial.print("Right arm");
+        arm_ct = arm_ct + 1;
+        prev_loc = atRight;
+        if (round(arm_ct / 2) < num_laps)
+        {
+          setMotors(open_right, block_right, open_left);
+          next_loc = atLeft;
+        }
+        else
+        {
+          setMotors(open_right, block_right, closed_left);
+          next_loc = atWater;
+        }
+      }
+      if ((read_water < IR_thresh) && (prev_loc == atRight) && (next_loc == atWater))
+      {
+        //Serial.print("Water port");
+        prev_loc = atWater;
+        next_loc = atLeft;
+        if (round(arm_ct / 2) == num_laps)
+        {
+          //Serial.print("Dispensing");
+          setMotors(closed_right, open_middle, closed_left);
+          pump_ct = millis();
+          while ((millis() - pump_ct) < PUMP_OPEN_TIME)
+          {
+            digitalWrite(pump_1, HIGH);
+          }
+          if ((millis() - pump_ct) >= PUMP_OPEN_TIME)
+          {
+            digitalWrite(pump_1, LOW);
+          }
+          delay(water_delay);
+          setMotors(closed_right, open_middle, open_left);
+          arm_ct = 0;
+        }
+        else
+        {
+          setMotors(closed_right, open_middle, open_left);
+        }
+      }
+    }
+    else if ((!full_circle) && (CCW)) //always start down middle trajectory, right always blocked
+    {
+      if ((read_middle < IR_thresh) && ((prev_loc == atWater) || (prev_loc == atLeft)) && (next_loc == atMiddle)) //passes middle IR coming from water port
+      {
+        arm_ct = arm_ct + 1;
+        setMotors(closed_right, block_right, open_left);
+        prev_loc = atMiddle;
+        next_loc = atLeft;
+      }
+      if ((read_left < IR_thresh) && (prev_loc == atMiddle) && (next_loc == atLeft)) //passes left IR coming from middle
+      {
+        setMotors(closed_right, block_left, open_left); //block from going back
+        prev_loc = atLeft;
+        arm_ct = arm_ct + 1;
+        if (round(arm_ct / 2) == num_laps)
+        {
+          next_loc = atWater;
+        }
+        else if (round(arm_ct / 2) < num_laps)
+        {
+          next_loc = atMiddle;
+        }
+      }
+      if ((read_water < IR_thresh) && (prev_loc == atLeft) && (next_loc == atWater))
+      {
+        prev_loc = atWater;
+        next_loc = atMiddle;
+        if (round(arm_ct / 2) == num_laps)
+        {
+          setMotors(closed_right, block_right, closed_left);
+          pump_ct = millis();
+          while ((millis() - pump_ct) < PUMP_OPEN_TIME)
+          {
+            digitalWrite(pump_1, HIGH);
+          }
+          if ((millis() - pump_ct) >= PUMP_OPEN_TIME)
+          {
+            digitalWrite(pump_1, LOW);
+          }
+          //no water delay here
+          arm_ct = 0;
+        } // no else here because there isn't a door to block them from continuing
+      }
+    }
+    else if ((!full_circle) && (!CCW))
+    {
+      if ((read_middle < IR_thresh) && ((prev_loc == atWater) || (prev_loc == atRight)) && (next_loc == atMiddle)) //passes middle IR coming from water port
+      {
+        setMotors(open_right, block_left, closed_left);
+        prev_loc = atMiddle;
+        next_loc = atRight;
+        arm_ct = arm_ct + 1;
+      }
+      if ((read_right < IR_thresh) && (prev_loc == atMiddle) && (next_loc == atRight)) //passes right IR coming from left arm
       {
         setMotors(open_right, block_right, closed_left);
-        next_loc = atWater;
-      }
-    }
-    if ((read_water < IR_thresh) && (prev_loc == atRight) && (next_loc == atWater))
-    {
-      //Serial.print("Water port");
-      prev_loc = atWater;
-      next_loc = atLeft;
-      if (round(arm_ct / 2) == num_laps)
-      {
-        //Serial.print("Dispensing");
-        setMotors(closed_right, open_middle, closed_left);
-        pump_ct = millis();
-        while ((millis() - pump_ct) < PUMP_OPEN_TIME)
+        prev_loc = atRight;
+        arm_ct = arm_ct + 1;
+        if (round(arm_ct / 2) == num_laps)
         {
-          digitalWrite(pump_1, HIGH);
+          next_loc = atWater;
         }
-        if ((millis() - pump_ct) >= PUMP_OPEN_TIME)
+        else if (round(arm_ct / 2) < num_laps)
         {
-          digitalWrite(pump_1, LOW);
+          next_loc = atMiddle;
         }
-        delay(water_delay);
-        setMotors(closed_right, open_middle, open_left);
-        arm_ct = 0;
       }
-      else
+      if ((read_water < IR_thresh) && (prev_loc == atRight) && (next_loc == atWater))
       {
-        setMotors(closed_right, open_middle, open_left);
-      }
-    }
-  }
-  else if ((!full_circle) && (CCW)) //always start down middle trajectory, right always blocked
-  {
-    if ((read_middle < IR_thresh) && ((prev_loc == atWater)||(prev_loc == atLeft)) && (next_loc == atMiddle)) //passes middle IR coming from water port
-    {
-      arm_ct = arm_ct + 1;
-      setMotors(closed_right, block_right, open_left);
-      prev_loc = atMiddle;
-      next_loc = atLeft;
-    }
-    if ((read_left < IR_thresh) && (prev_loc == atMiddle) && (next_loc == atLeft)) //passes left IR coming from middle
-    {
-      setMotors(closed_right, block_left, open_left); //block from going back
-      prev_loc = atLeft;
-      arm_ct = arm_ct + 1;
-      if (round(arm_ct / 2) == num_laps)
-      {
-        next_loc = atWater;
-      }
-      else if (round(arm_ct / 2) < num_laps)
-      {
+        prev_loc = atWater;
         next_loc = atMiddle;
+        if (round(arm_ct / 2) == num_laps)
+        {
+          setMotors(closed_right, block_left, closed_left);
+          pump_ct = millis();
+          while ((millis() - pump_ct) < PUMP_OPEN_TIME)
+          {
+            digitalWrite(pump_1, HIGH);
+          }
+          if ((millis() - pump_ct) >= PUMP_OPEN_TIME)
+          {
+            digitalWrite(pump_1, LOW);
+          }
+          //no water delay here
+          arm_ct = 0;
+        }
       }
     }
-    if ((read_water < IR_thresh) && (prev_loc == atLeft) && (next_loc == atWater))
-    {
-      prev_loc = atWater;
-      next_loc = atMiddle;
-      if (round(arm_ct / 2) == num_laps)
-      {
-        setMotors(closed_right, block_right, closed_left);
-        pump_ct = millis();
-        while ((millis() - pump_ct) < PUMP_OPEN_TIME)
-        {
-          digitalWrite(pump_1, HIGH);
-        }
-        if ((millis() - pump_ct) >= PUMP_OPEN_TIME)
-        {
-          digitalWrite(pump_1, LOW);
-        }
-        //no water delay here
-        arm_ct = 0;
-      } // no else here because there isn't a door to block them from continuing
-    }
+    //sensorRead = analogRead(IRsensor);
+    // //Serial.println(sensorRead);
+    // put your main code here, to run repeatedly:
+    //servo1_middle.write(open_middle);
+    //delay(5000);
+    //servo1_middle.write(closed_middle_blockR);
+    //delay(5000);
+    //servo1_middle.write(closed_middle_blockL);
+    //delay(5000);
+    //digitalWrite(pump_1,HIGH);
+    //delay(5000);
+    //digitalWrite(pump_1,LOW);
+    //delay(5000);
   }
-  else if ((!full_circle) && (!CCW))
-  {
-    if ((read_middle < IR_thresh) && ((prev_loc == atWater)||(prev_loc == atRight)) && (next_loc == atMiddle)) //passes middle IR coming from water port
-    {
-      setMotors(open_right, block_left, closed_left);
-      prev_loc = atMiddle;
-      next_loc = atRight;
-      arm_ct = arm_ct+1;
-    }
-    if ((read_right < IR_thresh) && (prev_loc == atMiddle) && (next_loc == atRight)) //passes right IR coming from left arm
-    {
-      setMotors(open_right, block_right, closed_left);
-      prev_loc = atRight;
-      arm_ct = arm_ct+1;
-      if (round(arm_ct / 2) == num_laps)
-      {
-        next_loc = atWater;
-      }
-      else if (round(arm_ct / 2) < num_laps)
-      {
-        next_loc = atMiddle;
-      }
-    }
-    if ((read_water < IR_thresh) && (prev_loc == atRight) && (next_loc == atWater))
-    {
-      prev_loc = atWater;
-      next_loc = atMiddle;
-      if (round(arm_ct / 2) == num_laps)
-      {
-        setMotors(closed_right, block_left, closed_left);
-        pump_ct = millis();
-        while ((millis() - pump_ct) < PUMP_OPEN_TIME)
-        {
-          digitalWrite(pump_1, HIGH);
-        }
-        if ((millis() - pump_ct) >= PUMP_OPEN_TIME)
-        {
-          digitalWrite(pump_1, LOW);
-        }
-        //no water delay here
-        arm_ct = 0;
-      }
-    }
-  }
-  //sensorRead = analogRead(IRsensor);
-  // //Serial.println(sensorRead);
-  // put your main code here, to run repeatedly:
-  //servo1_middle.write(open_middle);
-  //delay(5000);
-  //servo1_middle.write(closed_middle_blockR);
-  //delay(5000);
-  //servo1_middle.write(closed_middle_blockL);
-  //delay(5000);
-  //digitalWrite(pump_1,HIGH);
-  //delay(5000);
-  //digitalWrite(pump_1,LOW);
-  //delay(5000);
 }
