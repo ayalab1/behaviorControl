@@ -10,6 +10,7 @@ boolean started_trial = false;
 // l = LEFT - trigger left sensor manually
 // m = MIDDLE - trigger middle sensor manually
 // r = RIGHT - trigger right sensor manually
+// w = WATER - trigger water sensor manually
 
 // Set up servos
 #include <Servo.h>
@@ -112,7 +113,7 @@ void loop() {
       setMotors(closed_right, block_left, closed_left);//left permanently closed for this trial type
       next_loc = atMiddle;
     }
-    started_trial = false;
+    started_trial = true;
   }
 
   if (started_trial)
@@ -134,6 +135,10 @@ void loop() {
     else if (incomingByte == 'r')
     {
       read_right = 0;
+    }
+    else if (incomingByte == 'w')
+    {
+      read_water = 0;
     }
 
     if ((full_circle) && (CCW))
