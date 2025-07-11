@@ -7,6 +7,7 @@ boolean full_circle = true; //if using half circle, should always start down mid
 char incomingByte;
 boolean started_trial = false;
 // g = GO - release mouse from start area
+// h = HOLD - pause the trials to hold mouse in start area
 // l = LEFT - trigger left sensor manually
 // m = MIDDLE - trigger middle sensor manually
 // r = RIGHT - trigger right sensor manually
@@ -56,6 +57,7 @@ int atMiddle = 2;
 int atLeft = 3;
 int prev_loc = 0;
 int next_loc = 0;
+int trial_ct = 0;
 
 int water_delay = 5 * 1000; //5 seconds
 
@@ -87,6 +89,15 @@ void setup() {
 
 void loop() {
   incomingByte = Serial.read();
+  if (incomingByte == 'h')
+  {
+    setMotors(closed_right, block_right, closed_left);
+    started_trial = false;
+    Serial.print('\n');
+    Serial.print("Trial paused");
+  }
+
+
   if ((!started_trial) && (incomingByte == 'g'))
   {
     // full circle, CCW
@@ -179,9 +190,10 @@ void loop() {
         next_loc = atRight;
         if (round(arm_ct / 2) == num_laps)
         {
-          //Serial.print("Dispensing");
-          //Serial.print('\n');
-          //Serial.print("Water, dispensing");
+          trial_ct = trial_ct + 1;
+          Serial.print('\n');
+          Serial.print("Trial #: ");
+          Serial.print(trial_ct);
           setMotors(closed_right, open_middle, closed_left);
           pump_ct = millis();
           while ((millis() - pump_ct) < PUMP_OPEN_TIME)
@@ -239,7 +251,10 @@ void loop() {
         next_loc = atLeft;
         if (round(arm_ct / 2) == num_laps)
         {
-          //Serial.print("Dispensing");
+          trial_ct = trial_ct + 1;
+          Serial.print('\n');
+          Serial.print("Trial #: ");
+          Serial.print(trial_ct);
           setMotors(closed_right, open_middle, closed_left);
           pump_ct = millis();
           while ((millis() - pump_ct) < PUMP_OPEN_TIME)
@@ -289,6 +304,10 @@ void loop() {
         next_loc = atMiddle;
         if (round(arm_ct / 2) == num_laps)
         {
+          trial_ct = trial_ct + 1;
+          Serial.print('\n');
+          Serial.print("Trial #: ");
+          Serial.print(trial_ct);
           setMotors(closed_right, block_right, closed_left);
           pump_ct = millis();
           while ((millis() - pump_ct) < PUMP_OPEN_TIME)
@@ -333,6 +352,10 @@ void loop() {
         next_loc = atMiddle;
         if (round(arm_ct / 2) == num_laps)
         {
+          trial_ct = trial_ct + 1;
+          Serial.print('\n');
+          Serial.print("Trial #: ");
+          Serial.print(trial_ct);
           setMotors(closed_right, block_left, closed_left);
           pump_ct = millis();
           while ((millis() - pump_ct) < PUMP_OPEN_TIME)
